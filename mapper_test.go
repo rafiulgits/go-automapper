@@ -33,3 +33,29 @@ func TestMapping(t *testing.T) {
 		t.Error("failed to map by callback")
 	}
 }
+
+func TestArrayMapping(t *testing.T) {
+	type A struct {
+		Name string
+	}
+
+	type B struct {
+		ID   int
+		Name string
+	}
+
+	a1 := &A{Name: "One"}
+	a2 := &A{Name: "Two"}
+
+	aSlice := []*A{a1, a2}
+	bSlice := []*B{}
+
+	automapper.Map(aSlice, &bSlice, func(idx int, src *A, dst *B) {
+		t.Log(idx, src, dst)
+		dst.ID = idx + 1
+	})
+
+	if bSlice[0].ID != 1 && bSlice[1].ID != 2 {
+		t.Error("slice map callback failed")
+	}
+}
