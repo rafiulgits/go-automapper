@@ -17,13 +17,14 @@ Go-automapper can automatically map data between different types with identicall
 
 ### How to use
 
-Install automapper in your project
+Install automapper in your go project
 
 ```
-go get github.com/rafiulgits/automapper
+go get github.com/rafiulgits/go-automapper
 ```
 
 
+Map your models
 
 ```go
 type A struct {
