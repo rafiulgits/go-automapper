@@ -24,12 +24,13 @@ go get github.com/rafiulgits/go-automapper
 ```
 
 
-Map your models
+
+* Object - Object Mapping
 
 ```go
 type A struct {
-		Name  string
-		Phone string
+  Name  string
+  Phone string
 }
 
 type B struct {
@@ -46,3 +47,29 @@ automapper.Map(a, b, func(src *A, dst *B) {
 })
 ```
 
+
+
+* Slice - Slice Mapping
+
+```go
+type A struct {
+  Name string
+}
+
+type B struct {
+  ID   int
+  Name string
+}
+
+a1 := &A{Name: "One"}
+a2 := &A{Name: "Two"}
+
+aSlice := []*A{a1, a2}
+bSlice := []*B{}
+
+automapper.Map(aSlice, &bSlice, func(idx int, src *A, dst *B) {
+  t.Log(idx, src, dst)
+  dst.ID = idx + 1
+})
+
+```
