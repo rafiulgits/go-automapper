@@ -1,3 +1,3 @@
-module github.com/rafiulgits/automapper
+module github.com/rafiulgits/go-automapper
 
 go 1.17

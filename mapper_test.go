@@ -3,7 +3,7 @@ package automapper_test
 import (
 	"testing"
 
-	"github.com/rafiulgits/automapper"
+	"github.com/rafiulgits/go-automapper"
 )
 
 func TestMapping(t *testing.T) {
