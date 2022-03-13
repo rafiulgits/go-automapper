@@ -2,6 +2,7 @@ package automapper_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/rafiulgits/go-automapper"
 )
@@ -58,4 +59,36 @@ func TestArrayMapping(t *testing.T) {
 	if bSlice[0].ID != 1 && bSlice[1].ID != 2 {
 		t.Error("slice map callback failed")
 	}
+}
+
+func TestTimeMapping(t *testing.T) {
+	type A struct {
+		Time string
+	}
+
+	type B struct {
+		Time time.Time
+	}
+
+	type C struct {
+		ID   int
+		Time time.Time
+	}
+
+	a := &A{Time: time.Now().Format(time.RFC3339)}
+	b := &B{Time: time.Now()}
+	c1 := &C{}
+	c2 := &C{}
+
+	automapper.Map(a, c1)
+	automapper.Map(b, c2)
+
+	if c1.Time.IsZero() {
+		t.Error("time string to time object mapping failed")
+	}
+
+	if c2.Time.IsZero() {
+		t.Error("time object to time object mapping failed")
+	}
+
 }

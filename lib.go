@@ -13,6 +13,7 @@ package automapper
 import (
 	"fmt"
 	"reflect"
+	"time"
 )
 
 // Map fills out the fields in dest with values from source. All fields in the
@@ -66,6 +67,11 @@ func mapValues(sourceVal, destVal reflect.Value, loose bool) {
 				sourceVal = reflect.New(sourceVal.Type().Elem())
 			}
 			sourceVal = sourceVal.Elem()
+		}
+		// If destination type if time object then try to map time object only
+		if valueIsTimeObject(destVal) {
+			mapTime(sourceVal, destVal)
+			return
 		}
 		for i := 0; i < destVal.NumField(); i++ {
 			mapField(sourceVal, destVal, i, loose)
@@ -161,4 +167,23 @@ func valueIsContainedInNilEmbeddedType(source reflect.Value, fieldName string) b
 		}
 	}
 	return false
+}
+
+func valueIsTimeObject(value reflect.Value) bool {
+	_, ok := value.Interface().(time.Time)
+	return ok
+}
+
+func mapTime(sourceVal, destVal reflect.Value) {
+	switch sourceVal.Type().Kind() {
+	case reflect.String:
+		parsedTime, err := time.Parse(time.RFC3339, sourceVal.String())
+		if err == nil {
+			destVal.Set(reflect.ValueOf(parsedTime))
+
+		}
+
+	case reflect.Struct:
+		destVal.Set(sourceVal)
+	}
 }
