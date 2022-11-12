@@ -11,120 +11,83 @@
 package automapper
 
 import (
-	"fmt"
 	"reflect"
 	"time"
 )
 
-// Map fills out the fields in dest with values from source. All fields in the
-// destination object must exist in the source object.
-//
-// Object hierarchies with nested structs and slices are supported, as long as
-// type types of nested structs/slices follow the same rules, i.e. all fields
-// in destination structs must be found on the source struct.
-//
-// Embedded/anonymous structs are supported
-//
-// Values that are not exported/not public will not be mapped.
-//
-// It is a design decision to panic when a field cannot be mapped in the
-// destination to ensure that a renamed field in either the source or
-// destination does not result in subtle silent bug.
-
-// func Map(source, dest interface{}) {
-// 	var destType = reflect.TypeOf(dest)
-// 	if destType.Kind() != reflect.Ptr {
-// 		panic("Dest must be a pointer type")
-// 	}
-// 	var sourceVal = reflect.ValueOf(source)
-// 	var destVal = reflect.ValueOf(dest).Elem()
-// 	mapValues(sourceVal, destVal, false)
-// }
-
-// MapLoose works just like Map, except it doesn't fail when the destination
-// type contains fields not supplied by the source.
-//
-// This function is meant to be a temporary solution - the general idea is
-// that the Map function should take a number of options that can modify its
-// behavior - but I'd rather not add that functionality before I have a better
-// idea what is a good options format.
 func _mapLoose(source, dest interface{}) {
-	var destType = reflect.TypeOf(dest)
-	if destType.Kind() != reflect.Ptr {
-		panic("Dest must be a pointer type")
+	var dstType = reflect.TypeOf(dest)
+	if dstType.Kind() != reflect.Ptr {
+		panic("destination must be a pointer type")
 	}
-	var sourceVal = reflect.ValueOf(source)
-	var destVal = reflect.ValueOf(dest).Elem()
-	mapValues(sourceVal, destVal, true)
+	var srcVal = reflect.ValueOf(source)
+	var dstVal = reflect.ValueOf(dest).Elem()
+	mapValues(srcVal, dstVal, true)
 }
 
-func mapValues(sourceVal, destVal reflect.Value, loose bool) {
-	destType := destVal.Type()
-	if destType.Kind() == reflect.Struct {
-		if sourceVal.Type().Kind() == reflect.Ptr {
-			if sourceVal.IsNil() {
+func mapValues(srcVal, dstVal reflect.Value, loose bool) {
+	dstType := dstVal.Type()
+	if dstType.Kind() == reflect.Struct {
+		if srcVal.Type().Kind() == reflect.Ptr {
+			if srcVal.IsNil() {
 				// If source is nil, it maps to an empty struct
-				sourceVal = reflect.New(sourceVal.Type().Elem())
+				srcVal = reflect.New(srcVal.Type().Elem())
 			}
-			sourceVal = sourceVal.Elem()
+			srcVal = srcVal.Elem()
 		}
 		// If destination type if time object then try to map time object only
-		if valueIsTimeObject(destVal) {
-			mapTime(sourceVal, destVal)
+		if valueIsTimeObject(dstVal) {
+			mapTime(srcVal, dstVal)
 			return
 		}
-		for i := 0; i < destVal.NumField(); i++ {
-			mapField(sourceVal, destVal, i, loose)
+		for i := 0; i < dstVal.NumField(); i++ {
+			mapField(srcVal, dstVal, i, loose)
 		}
-	} else if destType == sourceVal.Type() {
-		destVal.Set(sourceVal)
-	} else if destType.Kind() == reflect.Ptr {
-		if valueIsNil(sourceVal) {
+	} else if dstType == srcVal.Type() {
+		dstVal.Set(srcVal)
+	} else if dstType.Kind() == reflect.Ptr {
+		if valueIsNil(srcVal) {
 			return
 		}
-		val := reflect.New(destType.Elem())
-		mapValues(sourceVal, val.Elem(), loose)
-		destVal.Set(val)
-	} else if destType.Kind() == reflect.Slice {
-		mapSlice(sourceVal, destVal, loose)
+		val := reflect.New(dstType.Elem())
+		mapValues(srcVal, val.Elem(), loose)
+		dstVal.Set(val)
+	} else if dstType.Kind() == reflect.Slice {
+		mapSlice(srcVal, dstVal, loose)
 	} else {
-		panic("Currently not supported")
+		//mapping currently not supported
+
 	}
 }
 
-func mapSlice(sourceVal, destVal reflect.Value, loose bool) {
-	destType := destVal.Type()
-	length := sourceVal.Len()
-	target := reflect.MakeSlice(destType, length, length)
+func mapSlice(srcVal, dstVal reflect.Value, loose bool) {
+	dstType := dstVal.Type()
+	length := srcVal.Len()
+	target := reflect.MakeSlice(dstType, length, length)
 	for j := 0; j < length; j++ {
-		val := reflect.New(destType.Elem()).Elem()
-		mapValues(sourceVal.Index(j), val, loose)
+		val := reflect.New(dstType.Elem()).Elem()
+		mapValues(srcVal.Index(j), val, loose)
 		target.Index(j).Set(val)
 	}
 
 	if length == 0 {
-		verifyArrayTypesAreCompatible(sourceVal, destVal, loose)
+		verifyArrayTypesAreCompatible(srcVal, dstVal, loose)
 	}
-	destVal.Set(target)
+	dstVal.Set(target)
 }
 
-func verifyArrayTypesAreCompatible(sourceVal, destVal reflect.Value, loose bool) {
-	dummyDest := reflect.New(reflect.PtrTo(destVal.Type()))
-	dummySource := reflect.MakeSlice(sourceVal.Type(), 1, 1)
+func verifyArrayTypesAreCompatible(srcVal, dstVal reflect.Value, loose bool) {
+	dummyDest := reflect.New(reflect.PtrTo(dstVal.Type()))
+	dummySource := reflect.MakeSlice(srcVal.Type(), 1, 1)
 	mapValues(dummySource, dummyDest.Elem(), loose)
 }
 
-func mapField(source, destVal reflect.Value, i int, loose bool) {
-	destType := destVal.Type()
-	fieldName := destType.Field(i).Name
-	defer func() {
-		if r := recover(); r != nil {
-			panic(fmt.Sprintf("Error mapping field: %s. DestType: %v. SourceType: %v. Error: %v", fieldName, destType, source.Type(), r))
-		}
-	}()
+func mapField(source, dstVal reflect.Value, i int, loose bool) {
+	dstType := dstVal.Type()
+	fieldName := dstType.Field(i).Name
 
-	destField := destVal.Field(i)
-	if destType.Field(i).Anonymous {
+	destField := dstVal.Field(i)
+	if dstType.Field(i).Anonymous {
 		mapValues(source, destField, loose)
 	} else {
 		if valueIsContainedInNilEmbeddedType(source, fieldName) {
@@ -174,16 +137,16 @@ func valueIsTimeObject(value reflect.Value) bool {
 	return ok
 }
 
-func mapTime(sourceVal, destVal reflect.Value) {
-	switch sourceVal.Type().Kind() {
+func mapTime(srcVal, dstVal reflect.Value) {
+	switch srcVal.Type().Kind() {
 	case reflect.String:
-		parsedTime, err := time.Parse(time.RFC3339, sourceVal.String())
+		parsedTime, err := time.Parse(time.RFC3339, srcVal.String())
 		if err == nil {
-			destVal.Set(reflect.ValueOf(parsedTime))
+			dstVal.Set(reflect.ValueOf(parsedTime))
 
 		}
 
 	case reflect.Struct:
-		destVal.Set(sourceVal)
+		dstVal.Set(srcVal)
 	}
 }

@@ -92,3 +92,18 @@ func TestTimeMapping(t *testing.T) {
 	}
 
 }
+
+func TestSameFieldDifferentTypeIgnore(t *testing.T) {
+	type Source struct {
+		ID int
+	}
+
+	type Destination struct {
+		ID string
+	}
+
+	src := &Source{ID: 1}
+	dst := Destination{}
+
+	automapper.Map(src, &dst)
+}
