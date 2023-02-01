@@ -51,7 +51,7 @@ func mapValues(srcVal, dstVal reflect.Value, loose bool) {
 		}
 		val := reflect.New(dstType.Elem()) // clone dest type
 		if dstVal.IsValid() && !dstVal.IsZero() {
-			val.Set(dstVal) // setting initial values
+			val.Elem().Set(dstVal.Elem()) // setting initial values
 		}
 		mapValues(srcVal, val.Elem(), loose)
 		dstVal.Set(val)
