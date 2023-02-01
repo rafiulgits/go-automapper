@@ -49,7 +49,10 @@ func mapValues(srcVal, dstVal reflect.Value, loose bool) {
 		if valueIsNil(srcVal) {
 			return
 		}
-		val := reflect.New(dstType.Elem())
+		val := reflect.New(dstType.Elem()) // clone dest type
+		if dstVal.IsValid() && !dstVal.IsZero() {
+			val.Set(dstVal) // setting initial values
+		}
 		mapValues(srcVal, val.Elem(), loose)
 		dstVal.Set(val)
 	} else if dstType.Kind() == reflect.Slice {

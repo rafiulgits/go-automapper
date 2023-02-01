@@ -107,3 +107,29 @@ func TestSameFieldDifferentTypeIgnore(t *testing.T) {
 
 	automapper.Map(src, &dst)
 }
+
+func TestIgnoringExtendedFields(t *testing.T) {
+	type C struct {
+		Age int
+	}
+	type A struct {
+		ID   int
+		Name string
+		*C
+	}
+
+	type B struct {
+		ID   int
+		Name string
+	}
+
+	a := &A{ID: 10, Name: "Ten", C: &C{Age: 10}}
+	b := &B{ID: 5, Name: "Five"}
+
+	automapper.Map(b, a)
+	if a.ID == 5 && a.Name == "Five" && a.Age == 10 {
+		t.Log("success", a)
+	} else {
+		t.Error("mapper didn't ignore age field")
+	}
+}
